@@ -3,7 +3,9 @@ package com.koller.yannick.inspirobot;
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.res.ColorStateList;
 import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
@@ -15,9 +17,12 @@ import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.text.Layout;
 import android.util.Log;
+import android.util.TypedValue;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.ads.AdListener;
@@ -31,6 +36,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.UUID;
+
+import static com.koller.yannick.inspirobot.FontAwesomeManager.FONTAWESOME_SOLID;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -69,7 +76,6 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         checkPermissions();
-        //Picasso.setSingletonInstance(new Picasso.Builder(getBaseContext()).build());
 
         StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
         StrictMode.setThreadPolicy(policy);
@@ -103,6 +109,15 @@ public class MainActivity extends AppCompatActivity {
         m_imageView = (ImageView) findViewById(R.id.imageView);
 
         m_downloadButton = (FloatingActionButton) findViewById(R.id.downloadActionButton);
+
+        TextDrawable downloadDrawable = new TextDrawable(this);
+        downloadDrawable.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 20);
+        downloadDrawable.setTextAlign(Layout.Alignment.ALIGN_CENTER);
+        downloadDrawable.setTypeface(FontAwesomeManager.getTypeface(this, FONTAWESOME_SOLID));
+        downloadDrawable.setTextColor(Color.WHITE);
+        downloadDrawable.setText(getResources().getText(R.string.fa_download));
+        m_downloadButton.setImageDrawable(downloadDrawable);
+
         m_downloadButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -127,6 +142,15 @@ public class MainActivity extends AppCompatActivity {
         });
 
         m_reloadButton = (FloatingActionButton) findViewById(R.id.reloadActionButton);
+
+        TextDrawable reloadDrawable = new TextDrawable(this);
+        reloadDrawable.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 25);
+        reloadDrawable.setTextAlign(Layout.Alignment.ALIGN_CENTER);
+        reloadDrawable.setTypeface(FontAwesomeManager.getTypeface(this, FONTAWESOME_SOLID));
+        reloadDrawable.setTextColor(Color.WHITE);
+        reloadDrawable.setText(getResources().getText(R.string.fa_sync_alt));
+        m_reloadButton.setImageDrawable(reloadDrawable);
+
         m_reloadButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -141,6 +165,15 @@ public class MainActivity extends AppCompatActivity {
         });
 
         m_shareButton = (FloatingActionButton) findViewById(R.id.shareActionButton);
+
+        TextDrawable shareDrawable = new TextDrawable(this);
+        shareDrawable.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 25);
+        shareDrawable.setTextAlign(Layout.Alignment.ALIGN_CENTER);
+        shareDrawable.setTypeface(FontAwesomeManager.getTypeface(this, FONTAWESOME_SOLID));
+        shareDrawable.setTextColor(Color.WHITE);
+        shareDrawable.setText(getResources().getText(R.string.fa_share_alt));
+        m_shareButton.setImageDrawable(shareDrawable);
+
         m_shareButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {

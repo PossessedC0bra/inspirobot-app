@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="fa_download">&#xf019;</string>
+    <string name="fa_sync_alt">&#xf2f1;</string>
+    <string name="fa_share_alt">&#xf1e0;</string>
+</resources>
