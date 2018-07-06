@@ -16,6 +16,7 @@ import android.os.StrictMode;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.FileProvider;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Layout;
 import android.util.Log;
@@ -42,10 +43,11 @@ import static com.koller.yannick.inspirobot.FontAwesomeManager.FONTAWESOME_SOLID
 public class MainActivity extends AppCompatActivity {
 
     private final static int WRITE_EXTERNAL_STORAGE_PERMISSION_CODE = 1000;
-    private final static int CLICKS_TILL_AD = 9;
+    private final static int CLICKS_TILL_AD = 18;
 
     private int m_numberOfButtonClicks = 0;
-    private String m_currentImageUrl;
+    private static String m_currentImageUrl;
+    private UUID m_currentImageUUID;
 
     private AdView m_bottomBanner;
     private InterstitialAd m_interstitialAd;
@@ -106,9 +108,9 @@ public class MainActivity extends AppCompatActivity {
 
         });
 
-        m_imageView = (ImageView) findViewById(R.id.imageView);
+        m_imageView = findViewById(R.id.imageView);
 
-        m_downloadButton = (FloatingActionButton) findViewById(R.id.downloadActionButton);
+        m_downloadButton = findViewById(R.id.downloadActionButton);
 
         TextDrawable downloadDrawable = new TextDrawable(this);
         downloadDrawable.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 20);
@@ -121,29 +123,24 @@ public class MainActivity extends AppCompatActivity {
         m_downloadButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                cycleButtonState(m_downloadButton);
-
                 displayAd();
 
                 if(m_imageView.getDrawable() != null) {
                     if (ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
                         Toast.makeText(MainActivity.this, "Permission needed!", Toast.LENGTH_SHORT).show();
                         ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, WRITE_EXTERNAL_STORAGE_PERMISSION_CODE);
-                        return;
                     } else {
-                        String fileName = UUID.randomUUID() + ".jpg";
-                        Picasso.get().load(m_currentImageUrl).into(new SaveImageHelper(getBaseContext(), getApplicationContext().getContentResolver(), fileName, "image_description"));
+                        String fileName = m_currentImageUUID.toString();
+                        Picasso.get().load(m_currentImageUrl).into(new SaveImageHelper(getBaseContext(), getApplicationContext().getContentResolver(), fileName, "Quote: " + m_currentImageUUID));
                         Toast.makeText(MainActivity.this, "Image downloaded", Toast.LENGTH_SHORT).show();
                     }
                 }
-
-                cycleButtonState(m_downloadButton);
             }
         });
 
-        m_reloadButton = (FloatingActionButton) findViewById(R.id.reloadActionButton);
+        m_reloadButton = findViewById(R.id.reloadActionButton);
 
-        TextDrawable reloadDrawable = new TextDrawable(this);
+        final TextDrawable reloadDrawable = new TextDrawable(this);
         reloadDrawable.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 25);
         reloadDrawable.setTextAlign(Layout.Alignment.ALIGN_CENTER);
         reloadDrawable.setTypeface(FontAwesomeManager.getTypeface(this, FONTAWESOME_SOLID));
@@ -154,17 +151,13 @@ public class MainActivity extends AppCompatActivity {
         m_reloadButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                cycleButtonState(m_reloadButton);
-
                 displayAd();
-
+                m_currentImageUUID = UUID.randomUUID();
                 Picasso.get().load(new WebsiteTask().doInBackground("http://inspirobot.me/api?generate=true")).into(m_imageView);
-
-                cycleButtonState(m_reloadButton);
             }
         });
 
-        m_shareButton = (FloatingActionButton) findViewById(R.id.shareActionButton);
+        m_shareButton = findViewById(R.id.shareActionButton);
 
         TextDrawable shareDrawable = new TextDrawable(this);
         shareDrawable.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 25);
@@ -177,8 +170,6 @@ public class MainActivity extends AppCompatActivity {
         m_shareButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                cycleButtonState(m_shareButton);
-
                 displayAd();
 
                 if(m_imageView.getDrawable() != null){
@@ -189,16 +180,16 @@ public class MainActivity extends AppCompatActivity {
                         sharingIntent.putExtra(Intent.EXTRA_STREAM, getLocalBitmapUri(m_imageView));
                         startActivity(Intent.createChooser(sharingIntent, "Share via..."));
                     } catch (Exception e) {
+                        e.printStackTrace();
+                        Log.d("ShareImage", e.getLocalizedMessage());
                         Toast.makeText(MainActivity.this, "Failed to share image", Toast.LENGTH_SHORT).show();
                     }
                 }
-
-                cycleButtonState(m_shareButton);
             }
         });
     }
 
-    private class WebsiteTask extends AsyncTask<String, Void, String>{
+    private static class WebsiteTask extends AsyncTask<String, Void, String>{
 
         @Override
         protected String doInBackground(String... urls) {
@@ -228,7 +219,7 @@ public class MainActivity extends AppCompatActivity {
     public Uri getLocalBitmapUri(ImageView imageView) {
         // Extract Bitmap from ImageView drawable
         Drawable drawable = imageView.getDrawable();
-        Bitmap bmp = null;
+        Bitmap bmp;
         if (drawable instanceof BitmapDrawable){
             bmp = ((BitmapDrawable) imageView.getDrawable()).getBitmap();
         } else {
@@ -240,12 +231,11 @@ public class MainActivity extends AppCompatActivity {
             // Use methods on Context to access package-specific directories on external storage.
             // This way, you don't need to request external read/write permission.
             // See https://youtu.be/5xVh-7ywKpE?t=25m25s
-            File file =  new File(getExternalFilesDir(Environment.DIRECTORY_PICTURES), "share_image_" + System.currentTimeMillis() + "_temp.png");
+            File file =  new File(getExternalFilesDir(Environment.DIRECTORY_PICTURES), "share_image_" + m_currentImageUUID + "_temp.png");
             FileOutputStream out = new FileOutputStream(file);
-            bmp.compress(Bitmap.CompressFormat.PNG, 90, out);
+            bmp.compress(Bitmap.CompressFormat.PNG, 100, out);
             out.close();
-            // **Warning:** This will fail for API >= 24, use a FileProvider as shown below instead.
-            bmpUri = Uri.fromFile(file);
+            bmpUri = FileProvider.getUriForFile(this, "com.koller.yannick.inspirobot", file);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -256,10 +246,8 @@ public class MainActivity extends AppCompatActivity {
         File file = new File(getExternalFilesDir(Environment.DIRECTORY_PICTURES).toURI());
         if (file.isDirectory())
         {
-            String[] children = file.list();
-            for (int i = 0; i < children.length; i++)
-            {
-                new File(file, children[i]).delete();
+            for (String children : file.list()) {
+                new File(file, children).delete();
             }
         }
     }
@@ -273,16 +261,6 @@ public class MainActivity extends AppCompatActivity {
                 Log.d("Ad", "The interstitial wasn't loaded yet.");
             }
             m_numberOfButtonClicks = 0;
-        }
-    }
-
-    private void cycleButtonState(FloatingActionButton button){
-        if(button.isEnabled()){
-            button.setEnabled(false);
-            button.setClickable(false);
-        }else {
-            button.setEnabled(true);
-            button.setClickable(true);
         }
     }
 }
