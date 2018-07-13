@@ -3,7 +3,6 @@ package com.koller.yannick.inspirobot;
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.content.res.ColorStateList;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
@@ -23,7 +22,6 @@ import android.util.Log;
 import android.util.TypedValue;
 import android.view.View;
 import android.widget.ImageView;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.ads.AdListener;
@@ -85,7 +83,7 @@ public class MainActivity extends AppCompatActivity {
         MobileAds.initialize(this, "ca-app-pub-9042314102946099~3303611577");
         AdRequest m_request = new AdRequest.Builder().build();
 
-        m_bottomBanner = findViewById(R.id.bottom_banner);
+        m_bottomBanner = findViewById(R.id.history_banner);
         m_bottomBanner.loadAd(m_request);
         m_bottomBanner.setAdListener(new AdListener() {
             @Override

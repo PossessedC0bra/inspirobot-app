@@ -37,7 +37,8 @@
         android:layout_alignTop="@+id/reloadActionButton"
         android:layout_marginStart="60dp"
         android:clickable="true"
-        app:srcCompat="@android:drawable/stat_sys_download" />
+        android:tint="@android:color/white"
+        app:srcCompat="@drawable/ic_file_download" />
 
     <android.support.design.widget.FloatingActionButton
         android:id="@+id/reloadActionButton"
@@ -47,7 +48,8 @@
         android:layout_centerHorizontal="true"
         android:layout_margin="10dp"
         android:clickable="true"
-        app:srcCompat="@android:drawable/stat_notify_sync" />
+        android:tint="@android:color/white"
+        app:srcCompat="@drawable/ic_sync" />
 
     <android.support.design.widget.FloatingActionButton
         android:id="@+id/shareActionButton"
@@ -57,7 +59,8 @@
         android:layout_alignTop="@+id/reloadActionButton"
         android:layout_marginEnd="60dp"
         android:clickable="true"
+        android:tint="@android:color/white"
         app:elevation="0dp"
-        app:srcCompat="@android:drawable/ic_menu_share" />
+        app:srcCompat="@drawable/ic_share" />
 
 </RelativeLayout>
