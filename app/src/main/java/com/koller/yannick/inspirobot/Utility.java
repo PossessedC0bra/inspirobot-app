@@ -12,7 +12,7 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.util.Log;
 
-public class Utility {
+public class Utility {  //TODO [ykl] make async task
     private static String TAG = "Utility Log";
 
     public static boolean isOnline(Context ctx) {
