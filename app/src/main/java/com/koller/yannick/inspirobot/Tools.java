@@ -35,6 +35,27 @@ import java.util.Date;
 
 public class Tools {
 
+    private final static int CLICKS_TILL_AD = 15;
+    private static int m_numberOfButtonClicks = 0;
+
+    public static boolean showAd(){
+        m_numberOfButtonClicks++;
+        if(m_numberOfButtonClicks == CLICKS_TILL_AD){
+            m_numberOfButtonClicks = 0;
+            return true;
+        }
+        return false;
+    }
+
+    public static int getStatusBarHeight(Activity act) {
+        int result = 0;
+        int resourceId = act.getResources().getIdentifier("status_bar_height", "dimen", "android");
+        if (resourceId > 0) {
+            result = act.getResources().getDimensionPixelSize(resourceId);
+        }
+        return result;
+    }
+
     public static void setSystemBarColor(Activity act) {
             Window window = act.getWindow();
             window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);

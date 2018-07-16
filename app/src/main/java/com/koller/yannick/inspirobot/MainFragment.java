@@ -40,6 +40,11 @@ import com.squareup.picasso.Target;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.StringWriter;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Locale;
@@ -50,10 +55,8 @@ import static com.koller.yannick.inspirobot.FontAwesomeManager.FONTAWESOME_SOLID
 public class MainFragment extends Fragment {
 
     private final static int WRITE_EXTERNAL_STORAGE_PERMISSION_CODE = 1000;
-    private final static int CLICKS_TILL_AD = 18;
     private final static int MAX_HISTORY_SIZE = 20;
 
-    private int m_numberOfButtonClicks = 0;
     private static String m_currentImageUrl;
     private UUID m_currentImageUUID;
 
@@ -92,9 +95,6 @@ public class MainFragment extends Fragment {
 
         checkPermissions();
 
-        StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
-        StrictMode.setThreadPolicy(policy);
-
         MobileAds.initialize(getContext(), "ca-app-pub-9042314102946099~3303611577");
         AdRequest m_request = new AdRequest.Builder().build();
 
@@ -118,7 +118,6 @@ public class MainFragment extends Fragment {
                 // Load the next interstitial.
                 m_interstitialAd.loadAd(new AdRequest.Builder().build());
             }
-
         });
 
         m_imageView = view.findViewById(R.id.imageView);
@@ -130,7 +129,7 @@ public class MainFragment extends Fragment {
             public void onClick(View v) {
                 displayAd();
 
-                if(m_imageView.getDrawable() != null) {
+                if (m_imageView.getDrawable() != null) {
                     if (ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
                         Toast.makeText(getContext(), "Permission needed!", Toast.LENGTH_SHORT).show();
                         ActivityCompat.requestPermissions(getActivity(), new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, WRITE_EXTERNAL_STORAGE_PERMISSION_CODE);
@@ -160,7 +159,7 @@ public class MainFragment extends Fragment {
             public void onClick(View v) {
                 displayAd();
 
-                if(m_imageView.getDrawable() != null){
+                if (m_imageView.getDrawable() != null) {
                     Intent sharingIntent = new Intent(android.content.Intent.ACTION_SEND);
                     sharingIntent.setType("image/*");
                     try {
@@ -178,11 +177,11 @@ public class MainFragment extends Fragment {
         loadLastImage();
     }
 
-    private void loadLastImage(){
+    private void loadLastImage() {
         File[] files = getTmpImages();
 
-        if(files.length > 1){
-            Picasso.get().load(files[files.length-1]).into(m_imageView);
+        if (files.length > 1) {
+            Picasso.get().load(files[files.length - 1]).into(m_imageView);
         }
     }
 
@@ -192,11 +191,13 @@ public class MainFragment extends Fragment {
     }
 
     private void downloadImage(String url) {
-        Picasso.get().load(new WebsiteTask().doInBackground("http://inspirobot.me/api?generate=true")).into(new Target() {
+        String[] urls = new String[]{url};
+        new WebsiteTask().execute(urls);
+        Picasso.get().load(m_currentImageUrl).into(new Target() {
             @Override
             public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
                 m_imageView.setImageBitmap(bitmap);
-                storeImage(getActivity().getExternalFilesDir(Environment.DIRECTORY_PICTURES).toString(), bitmap);
+                storeImage(getInternalImageDirectory(), bitmap);
             }
 
             @Override
@@ -205,13 +206,14 @@ public class MainFragment extends Fragment {
             }
 
             @Override
-            public void onPrepareLoad(Drawable placeHolderDrawable){}
+            public void onPrepareLoad(Drawable placeHolderDrawable) {
+            }
         });
     }
 
     private void storeImage(String path, Bitmap bitmap) {
         FileOutputStream fOut = null;
-        File file = new File(path ,m_currentImageUUID + ".png");
+        File file = new File(path, m_currentImageUUID + ".png");
 
         try {
             fOut = new FileOutputStream(file);
@@ -230,7 +232,7 @@ public class MainFragment extends Fragment {
         ContentValues values = new ContentValues();
         values.put(MediaStore.Images.Media.TITLE, m_currentImageUUID.toString());
         values.put(MediaStore.Images.Media.DESCRIPTION, "Quote: " + m_currentImageUUID);
-        values.put(MediaStore.Images.Media.DATE_TAKEN, System.currentTimeMillis ());
+        values.put(MediaStore.Images.Media.DATE_TAKEN, System.currentTimeMillis());
         values.put(MediaStore.Images.ImageColumns.BUCKET_ID, file.toString().toLowerCase(Locale.US).hashCode());
         values.put(MediaStore.Images.ImageColumns.BUCKET_DISPLAY_NAME, file.getName().toLowerCase(Locale.US));
         values.put("_data", file.getAbsolutePath());
@@ -239,7 +241,7 @@ public class MainFragment extends Fragment {
     }
 
     private void storeImageToGallery() {
-        File file = new File(getActivity().getExternalFilesDir(Environment.DIRECTORY_PICTURES).toString(), getFileName());
+        File file = new File(getInternalImageDirectory(), getFileName());
         Picasso.get().load(file).into(new Target() {
             @Override
             public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
@@ -252,12 +254,13 @@ public class MainFragment extends Fragment {
             }
 
             @Override
-            public void onPrepareLoad(Drawable placeHolderDrawable) {}
+            public void onPrepareLoad(Drawable placeHolderDrawable) {
+            }
         });
     }
 
-    private Uri getCurrentImageUri(){
-        File file =  new File(getActivity().getExternalFilesDir(Environment.DIRECTORY_PICTURES), m_currentImageUUID + ".png");
+    private Uri getCurrentImageUri() {
+        File file = new File(getActivity().getExternalFilesDir(Environment.DIRECTORY_PICTURES), m_currentImageUUID + ".png");
         return FileProvider.getUriForFile(getContext(), "com.koller.yannick.inspirobot", file);
     }
 
@@ -277,42 +280,15 @@ public class MainFragment extends Fragment {
         }
     }
 
-    // Returns the URI path to the Bitmap displayed in specified ImageView
-    public Uri getLocalBitmapUri(ImageView imageView) {
-        // Extract Bitmap from ImageView drawable
-        Drawable drawable = imageView.getDrawable();
-        Bitmap bmp;
-        if (drawable instanceof BitmapDrawable){
-            bmp = ((BitmapDrawable) imageView.getDrawable()).getBitmap();
-        } else {
-            return null;
-        }
-        // Store image to default external storage directory
-        Uri bmpUri = null;
-        try {
-            // Use methods on Context to access package-specific directories on external storage.
-            // This way, you don't need to request external read/write permission.
-            // See https://youtu.be/5xVh-7ywKpE?t=25m25s
-            File file =  new File(getActivity().getExternalFilesDir(Environment.DIRECTORY_PICTURES), "share_image_" + m_currentImageUUID + "_temp.png");
-            FileOutputStream out = new FileOutputStream(file);
-            bmp.compress(Bitmap.CompressFormat.PNG, 100, out);
-            out.close();
-            bmpUri = FileProvider.getUriForFile(getContext(), "com.koller.yannick.inspirobot", file);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return bmpUri;
-    }
-
-    private void clearTempImages(){
+    private void clearTempImages() {
         File[] files = getTmpImages();
 
-        if(files.length > MAX_HISTORY_SIZE-1){
+        if (files.length > MAX_HISTORY_SIZE - 1) {
             files[0].delete();
         }
     }
 
-    private File[] getTmpImages(){
+    private File[] getTmpImages() {
         File file = new File(getActivity().getExternalFilesDir(Environment.DIRECTORY_PICTURES).toURI());
         File[] files = file.listFiles();
 
@@ -328,40 +304,86 @@ public class MainFragment extends Fragment {
     }
 
     private void displayAd() {
-        m_numberOfButtonClicks++;
-        if(m_numberOfButtonClicks == CLICKS_TILL_AD){
+        if (Tools.showAd()) {
             if (m_interstitialAd.isLoaded()) {
                 m_interstitialAd.show();
             } else {
                 Log.d("Ad", "The interstitial wasn't loaded yet.");
             }
-            m_numberOfButtonClicks = 0;
         }
     }
 
-    private String getFileName(){
+    private String getFileName() {
         return m_currentImageUUID + ".png";
     }
 
-    private String getInternalImageDirectory(){
+    private String getInternalImageDirectory() {
         return getActivity().getExternalFilesDir(Environment.DIRECTORY_PICTURES).toString();
     }
 
-    private String getExternalImageDirectory(){
+    private String getExternalImageDirectory() {
         return Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).toString() + "/InspiroBot";
     }
 
-    private static class WebsiteTask extends AsyncTask<String, Void, String> {
+    private static class WebsiteTask extends AsyncTask<String, String, String> {
+
+        private static String TAG = "WebsiteTask";
 
         @Override
         protected String doInBackground(String... urls) {
             try {
-                String string = Utility.downloadDataFromUrl(urls[0]);
+                String string = downloadDataFromUrl(urls[0]);
                 Log.d("WebsiteTask", string);
-                return m_currentImageUrl = string;
+                return string;
             } catch (IOException e) {
                 return "Unable to retrieve data. URL may be invalid.";
             }
+        }
+
+        @Override
+        protected void onPostExecute(String s) {
+            m_currentImageUrl = s;
+        }
+
+        // Given a URL, establishes an HttpUrlConnection and retrieves
+        // the web page content as a InputStream, which it returns as
+        // a string.
+        public static String downloadDataFromUrl(String myurl) throws IOException {
+            InputStream is = null;
+            try {
+                URL url = new URL(myurl);
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setReadTimeout(10000); // time in milliseconds
+                conn.setConnectTimeout(15000); // time in milliseconds
+                conn.setRequestMethod("GET"); // request method GET OR POST
+                conn.setDoInput(true);
+                conn.connect(); // calling the web address
+                int response = conn.getResponseCode();
+                Log.d(TAG, "The response is: " + response);
+                is = conn.getInputStream();
+
+                // Convert the InputStream into a string
+                String contentAsString = readInputStream(is);
+                return contentAsString;
+
+                // Makes sure that the InputStream is closed after the app is
+                // finished using it.
+            } finally {
+                if (is != null) {
+                    is.close();
+                }
+            }
+        }
+
+        // Reads an InputStream and converts it to a String.
+        public static String readInputStream(InputStream stream) throws IOException {
+            int n = 0;
+            char[] buffer = new char[1];
+            InputStreamReader reader = new InputStreamReader(stream, "UTF8");
+            StringWriter writer = new StringWriter();
+            while (-1 != (n = reader.read(buffer)))
+                writer.write(buffer, 0, n);
+            return writer.toString();
         }
     }
 }

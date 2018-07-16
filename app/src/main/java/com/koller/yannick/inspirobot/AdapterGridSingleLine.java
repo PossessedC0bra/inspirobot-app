@@ -22,7 +22,7 @@ public class AdapterGridSingleLine extends RecyclerView.Adapter<RecyclerView.Vie
     private OnItemClickListener mOnItemClickListener;
 
     public interface OnItemClickListener {
-        void onItemClick(View view, File file, int position);
+        void onItemClick(View view, File[] files, int position);
     }
 
     public void setOnItemClickListener(final OnItemClickListener mItemClickListener) {
@@ -66,7 +66,7 @@ public class AdapterGridSingleLine extends RecyclerView.Adapter<RecyclerView.Vie
                 @Override
                 public void onClick(View view) {
                     if (mOnItemClickListener != null) {
-                        mOnItemClickListener.onItemClick(view, items.get(position), position);
+                        mOnItemClickListener.onItemClick(view, items.toArray(new File[1]), position);
                     }
                 }
             });

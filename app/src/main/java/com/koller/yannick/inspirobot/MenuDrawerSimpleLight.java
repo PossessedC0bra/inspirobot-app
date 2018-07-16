@@ -34,12 +34,15 @@ public class MenuDrawerSimpleLight extends AppCompatActivity {
         setSupportActionBar(m_toolbar);
         m_actionBar = getSupportActionBar();
         m_actionBar.setDisplayHomeAsUpEnabled(true);
-        m_actionBar.setHomeButtonEnabled(true);
         m_actionBar.setTitle(R.string.app_name);
     }
 
     private void initNavigationMenu() {
         final NavigationView nav_view = (NavigationView) findViewById(R.id.nav_view);
+        if(nav_view.getFitsSystemWindows()){
+            nav_view.setFitsSystemWindows(false);
+            nav_view.requestApplyInsets();
+        }
         final DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(this, drawer, m_toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close) {
             public void onDrawerOpened(View drawerView) {

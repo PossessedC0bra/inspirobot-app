@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item android:title="Large with Info" />
+    <item android:title="Large without Info" />
+    <item android:title="Small with Info" />
+    <item android:title="Small without Info" />
+</menu>

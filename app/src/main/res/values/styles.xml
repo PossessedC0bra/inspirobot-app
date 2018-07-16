@@ -1,8 +1,10 @@
 <resources>
+
     <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
+        <item name="colorControlNormal">@color/textColor</item>
     </style>
 
     <style name="AppThemeLight" parent="Theme.AppCompat.Light">
@@ -11,6 +13,7 @@
 
     <style name="AppThemeDark" parent="Theme.AppCompat">
         <item name="android:colorBackground">@android:color/background_dark</item>
+        <item name="colorControlNormal">@color/textColor</item>
     </style>
 
     <style name="TextAppearance.Subhead.Bold" parent="@style/TextAppearance.AppCompat.Subhead">
@@ -18,6 +21,7 @@
     </style>
 
     !--style for ripple library-->
+
     <style name="RippleStyleWhite">
         <item name="mrl_rippleOverlay">true</item>
         <item name="mrl_rippleColor">#80FFFFFF</item>
@@ -32,4 +36,8 @@
     <style name="RippleStyleDark" parent="RippleStyleWhite">
         <item name="mrl_rippleColor">#80000000</item>
     </style>
+
+    <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
+
+    <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
 </resources>
