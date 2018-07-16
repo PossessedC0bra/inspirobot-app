@@ -7,6 +7,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
+import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
@@ -52,13 +53,13 @@ public class GridSingleLineFragment extends Fragment {
 
         parent_view = view;
 
-        initToolbar(view);
+        initToolbar();
         initComponent(view);
         initAd(view);
     }
 
-    private void initToolbar(View view){
-        //TODO [ykl] change name
+    private void initToolbar(){
+        ((AppCompatActivity)getActivity()).getSupportActionBar().setTitle("History");
     }
 
     private void initComponent(View view) {

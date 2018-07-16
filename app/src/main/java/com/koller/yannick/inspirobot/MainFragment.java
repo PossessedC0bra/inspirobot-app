@@ -20,6 +20,7 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.FileProvider;
+import android.support.v7.app.AppCompatActivity;
 import android.text.Layout;
 import android.util.Log;
 import android.util.TypedValue;
@@ -174,7 +175,12 @@ public class MainFragment extends Fragment {
             }
         });
 
+        initToolbar();
         loadLastImage();
+    }
+
+    private void initToolbar(){
+        ((AppCompatActivity)getActivity()).getSupportActionBar().setTitle(R.string.app_name);
     }
 
     private void loadLastImage() {
