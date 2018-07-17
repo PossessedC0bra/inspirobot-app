@@ -50,6 +50,8 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Locale;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 import static com.koller.yannick.inspirobot.FontAwesomeManager.FONTAWESOME_SOLID;
 
@@ -130,14 +132,12 @@ public class MainFragment extends Fragment {
             public void onClick(View v) {
                 displayAd();
 
-                if (m_imageView.getDrawable() != null) {
-                    if (ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-                        Toast.makeText(getContext(), "Permission needed!", Toast.LENGTH_SHORT).show();
-                        ActivityCompat.requestPermissions(getActivity(), new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, WRITE_EXTERNAL_STORAGE_PERMISSION_CODE);
-                    } else {
-                        storeImageToGallery();
-                        Toast.makeText(getContext(), "Image downloaded", Toast.LENGTH_SHORT).show();
-                    }
+                if (ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                    Toast.makeText(getContext(), "Permission needed!", Toast.LENGTH_SHORT).show();
+                    ActivityCompat.requestPermissions(getActivity(), new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, WRITE_EXTERNAL_STORAGE_PERMISSION_CODE);
+                } else {
+                    storeImageToGallery();
+                    Toast.makeText(getContext(), "Image downloaded", Toast.LENGTH_SHORT).show();
                 }
             }
         });
@@ -160,17 +160,15 @@ public class MainFragment extends Fragment {
             public void onClick(View v) {
                 displayAd();
 
-                if (m_imageView.getDrawable() != null) {
-                    Intent sharingIntent = new Intent(android.content.Intent.ACTION_SEND);
-                    sharingIntent.setType("image/*");
-                    try {
-                        sharingIntent.putExtra(Intent.EXTRA_STREAM, getCurrentImageUri());
-                        startActivity(Intent.createChooser(sharingIntent, "Share via..."));
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        Log.d("ShareImage", e.getLocalizedMessage());
-                        Toast.makeText(getContext(), "Failed to share image", Toast.LENGTH_SHORT).show();
-                    }
+                Intent sharingIntent = new Intent(android.content.Intent.ACTION_SEND);
+                sharingIntent.setType("image/*");
+                try {
+                    sharingIntent.putExtra(Intent.EXTRA_STREAM, getCurrentImageUri());
+                    startActivity(Intent.createChooser(sharingIntent, "Share via..."));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    Log.d("ShareImage", e.getLocalizedMessage());
+                    Toast.makeText(getContext(), "Failed to share image", Toast.LENGTH_SHORT).show();
                 }
             }
         });
@@ -179,14 +177,14 @@ public class MainFragment extends Fragment {
         loadLastImage();
     }
 
-    private void initToolbar(){
-        ((AppCompatActivity)getActivity()).getSupportActionBar().setTitle(R.string.app_name);
+    private void initToolbar() {
+        ((AppCompatActivity) getActivity()).getSupportActionBar().setTitle(R.string.app_name);
     }
 
     private void loadLastImage() {
         File[] files = getTmpImages();
 
-        if (files.length > 1) {
+        if (files.length >= 1) {
             Picasso.get().load(files[files.length - 1]).into(m_imageView);
         }
     }
@@ -198,23 +196,29 @@ public class MainFragment extends Fragment {
 
     private void downloadImage(String url) {
         String[] urls = new String[]{url};
-        new WebsiteTask().execute(urls);
-        Picasso.get().load(m_currentImageUrl).into(new Target() {
+        //WebsiteTask task =
+        new WebsiteTask(new AsyncResponse() {
             @Override
-            public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
-                m_imageView.setImageBitmap(bitmap);
-                storeImage(getInternalImageDirectory(), bitmap);
-            }
+            public void processFinish(String output) {
+                m_currentImageUrl = output;
+                Picasso.get().load(m_currentImageUrl).into(new Target() {
+                    @Override
+                    public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
+                        m_imageView.setImageBitmap(bitmap);
+                        storeImage(getInternalImageDirectory(), bitmap);
+                    }
 
-            @Override
-            public void onBitmapFailed(Exception e, Drawable errorDrawable) {
-                Toast.makeText(getContext(), "Failed to load new image", Toast.LENGTH_SHORT).show();
-            }
+                    @Override
+                    public void onBitmapFailed(Exception e, Drawable errorDrawable) {
+                        Toast.makeText(getContext(), "Failed to load new image", Toast.LENGTH_SHORT).show();
+                    }
 
-            @Override
-            public void onPrepareLoad(Drawable placeHolderDrawable) {
+                    @Override
+                    public void onPrepareLoad(Drawable placeHolderDrawable) {
+                    }
+                });
             }
-        });
+        }).execute(urls);
     }
 
     private void storeImage(String path, Bitmap bitmap) {
@@ -329,67 +333,5 @@ public class MainFragment extends Fragment {
 
     private String getExternalImageDirectory() {
         return Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).toString() + "/InspiroBot";
-    }
-
-    private static class WebsiteTask extends AsyncTask<String, String, String> {
-
-        private static String TAG = "WebsiteTask";
-
-        @Override
-        protected String doInBackground(String... urls) {
-            try {
-                String string = downloadDataFromUrl(urls[0]);
-                Log.d("WebsiteTask", string);
-                return string;
-            } catch (IOException e) {
-                return "Unable to retrieve data. URL may be invalid.";
-            }
-        }
-
-        @Override
-        protected void onPostExecute(String s) {
-            m_currentImageUrl = s;
-        }
-
-        // Given a URL, establishes an HttpUrlConnection and retrieves
-        // the web page content as a InputStream, which it returns as
-        // a string.
-        public static String downloadDataFromUrl(String myurl) throws IOException {
-            InputStream is = null;
-            try {
-                URL url = new URL(myurl);
-                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                conn.setReadTimeout(10000); // time in milliseconds
-                conn.setConnectTimeout(15000); // time in milliseconds
-                conn.setRequestMethod("GET"); // request method GET OR POST
-                conn.setDoInput(true);
-                conn.connect(); // calling the web address
-                int response = conn.getResponseCode();
-                Log.d(TAG, "The response is: " + response);
-                is = conn.getInputStream();
-
-                // Convert the InputStream into a string
-                String contentAsString = readInputStream(is);
-                return contentAsString;
-
-                // Makes sure that the InputStream is closed after the app is
-                // finished using it.
-            } finally {
-                if (is != null) {
-                    is.close();
-                }
-            }
-        }
-
-        // Reads an InputStream and converts it to a String.
-        public static String readInputStream(InputStream stream) throws IOException {
-            int n = 0;
-            char[] buffer = new char[1];
-            InputStreamReader reader = new InputStreamReader(stream, "UTF8");
-            StringWriter writer = new StringWriter();
-            while (-1 != (n = reader.read(buffer)))
-                writer.write(buffer, 0, n);
-            return writer.toString();
-        }
     }
 }

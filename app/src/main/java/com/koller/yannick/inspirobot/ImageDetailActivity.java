@@ -159,7 +159,7 @@ public class ImageDetailActivity extends AppCompatActivity {
     }
 
     private void updateTitleBarText(int pos){
-        m_actionBar.setTitle((pos + 1) + "/20");
+        m_actionBar.setTitle((pos + 1) + "/" + m_files.length);
     }
 
     @Override
