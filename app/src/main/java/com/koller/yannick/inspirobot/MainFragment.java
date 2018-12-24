@@ -196,7 +196,7 @@ public class MainFragment extends Fragment {
 
     private void downloadImage(String url) {
         String[] urls = new String[]{url};
-        //WebsiteTask task =
+
         new WebsiteTask(new AsyncResponse() {
             @Override
             public void processFinish(String output) {

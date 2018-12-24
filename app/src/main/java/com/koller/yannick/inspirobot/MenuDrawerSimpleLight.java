@@ -62,6 +62,9 @@ public class MenuDrawerSimpleLight extends AppCompatActivity {
                         case R.id.nav_home:
                             fragment = new MainFragment();
                             break;
+                        case R.id.nav_mindfulness:
+                            fragment = new MindfulnessFragment();
+                            break;
                          case R.id.nav_history:
                              fragment = new GridSingleLineFragment();
                              break;

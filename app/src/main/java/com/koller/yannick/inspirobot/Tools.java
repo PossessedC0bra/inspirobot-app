@@ -35,7 +35,7 @@ import java.util.Date;
 
 public class Tools {
 
-    private final static int CLICKS_TILL_AD = 21;
+    private final static int CLICKS_TILL_AD = 20;
     private static int m_numberOfButtonClicks = 0;
 
     public static boolean showAd(){
